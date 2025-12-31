@@ -1,6 +1,13 @@
-FROM eclipse-temurin:25
+FROM eclipse-temurin:25 AS builder
+WORKDIR /app
+
 COPY . .
+RUN chmod +x gradlew
 RUN ./gradlew build --no-daemon
-ARG JAR_FILE=build/libs/*.jar
-COPY ${JAR_FILE} app.jar
-ENTRYPOINT ["java","-jar","/app.jar"]
+
+FROM eclipse-temurin:25
+WORKDIR /app
+
+COPY --from=builder /app/build/libs/*.jar app.jar
+
+ENTRYPOINT ["java","-jar","app.jar"]
