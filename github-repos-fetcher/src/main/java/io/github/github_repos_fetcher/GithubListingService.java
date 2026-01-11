@@ -20,7 +20,7 @@ public class GithubListingService {
     }
 
     public List<Repo> getUserRepos(String username){
-        return restClient.get()
+        List<Repo> repos =  restClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/users/{username}/repos")
                         .build(username))
                 .retrieve()
@@ -44,21 +44,15 @@ public class GithubListingService {
                 )
                 .body(new ParameterizedTypeReference<List<Repo>>() {});
 
-    }
+        return repos.stream()
+                .filter(repo -> !repo.fork())
+                .map(repo -> {
+                    List<Branch> branches = restClient.get()
+                            .uri("/repos/{username}/{repo}/branches", username, repo.name())
+                            .retrieve()
+                            .body(new ParameterizedTypeReference<List<Branch>>(){});
 
-    public List<Repo> excludeForkedRepos(List<Repo> repos){
-        repos.removeIf(Repo::isFork);
-        return repos;
-    }
-
-    public List<Repo> addBranchesToRepo(List<Repo> repos, String username){
-        for(Repo repo: repos){
-            List<Branch> branches = restClient.get()
-                    .uri("/repos/{username}/{repo}/branches", username, repo.getName())
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<List<Branch>>(){});
-            repo.setBranches(branches);
-        }
-        return repos;
+                    return new Repo(repo.name(), repo.ownerLogin(), false, branches);
+                }).toList();
     }
 }

@@ -17,13 +17,10 @@ public class GithubListingController {
     }
 
     @GetMapping("/{username}/repos")
-    public ResponseEntity<?> getUserRepositories(
+    public ResponseEntity<List<Repo>> getUserRepositories(
             @PathVariable(value = "username") String username
     ) {
         List<Repo> repos = githubListingService.getUserRepos(username);
-        repos = githubListingService.excludeForkedRepos(repos);
-        repos = githubListingService.addBranchesToRepo(repos, username);
-
         return ResponseEntity.ok(repos);
     }
 
